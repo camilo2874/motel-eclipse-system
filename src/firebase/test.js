@@ -1,11 +1,10 @@
 // Archivo para probar la conexión con Firebase
-import { crearHabitacionesIniciales, obtenerHabitaciones, actualizarHabitacion } from './database.js';
+import { crearHabitacionesIniciales, obtenerHabitaciones, actualizarHabitacion, crearUsuario } from './database.js';
+import { crearUsuarioFirestore } from './auth-alternativa.js';
 
 // Función para corregir precios de habitaciones existentes
 export const corregirPreciosHabitaciones = async () => {
   try {
-    console.log('🔧 Corrigiendo precios de habitaciones...');
-    
     const preciosCorrectos = {
       1: { precio5Horas: 40000 }, 2: { precio5Horas: 40000 }, 3: { precio5Horas: 40000 }, 4: { precio5Horas: 40000 },
       7: { precio5Horas: 40000 }, 8: { precio5Horas: 40000 }, 9: { precio5Horas: 40000 }, 10: { precio5Horas: 40000 },
@@ -17,7 +16,6 @@ export const corregirPreciosHabitaciones = async () => {
       await actualizarHabitacion(`habitacion-${numero}`, datos);
     }
     
-    console.log('✅ Precios corregidos correctamente');
     return true;
   } catch (error) {
     console.error('❌ Error al corregir precios:', error);
@@ -28,23 +26,14 @@ export const corregirPreciosHabitaciones = async () => {
 // Función para inicializar la base de datos por primera vez
 export const inicializarBaseDatos = async () => {
   try {
-    console.log('🚀 Inicializando base de datos...');
-    
     // Crear habitaciones iniciales
     const habitacionesCreadas = await crearHabitacionesIniciales();
-    if (habitacionesCreadas) {
-      console.log('✅ Habitaciones creadas correctamente');
-    }
-    
-    // Ya no creamos productos iniciales - el inventario debe empezar vacío
-    console.log('📦 Inventario iniciado vacío - listo para crear productos reales');
     
     // Corregir precios si es necesario
     await corregirPreciosHabitaciones();
     
     // Probar obtener habitaciones
     const habitaciones = await obtenerHabitaciones();
-    console.log('✅ Habitaciones obtenidas:', habitaciones.length);
     
     return true;
   } catch (error) {
@@ -53,11 +42,43 @@ export const inicializarBaseDatos = async () => {
   }
 };
 
+// Función para crear el usuario administrador inicial
+export const crearAdministradorInicial = async () => {
+  try {
+    console.log('👤 Creando administrador inicial...');
+    
+    const datosAdmin = {
+      usuario: 'admin',
+      password: 'eclipse2024',
+      nombre: 'Administrador',
+      apellido: 'Principal',
+      rol: 'administrador',
+      telefono: '3001234567',
+      activo: true
+    };
+    
+    // Usar directamente Firestore (sin intentar Firebase Auth)
+    const adminCreado = await crearUsuarioFirestore(datosAdmin);
+    
+    if (adminCreado.success) {
+      console.log('✅ Administrador inicial creado:');
+      console.log('� Usuario:', datosAdmin.usuario);
+      console.log('🔑 Contraseña:', datosAdmin.password);
+      console.log('⚠️ IMPORTANTE: Cambie la contraseña después del primer login');
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('❌ Error al crear administrador inicial:', error);
+    return false;
+  }
+};
+
 // Función de prueba simple
 export const probarConexion = async () => {
   try {
     const habitaciones = await obtenerHabitaciones();
-    console.log('✅ Conexión exitosa. Habitaciones encontradas:', habitaciones.length);
     return true;
   } catch (error) {
     console.error('❌ Error de conexión:', error);

@@ -111,3 +111,168 @@
     font-size: 1rem;
   }
 }
+
+/* Estilos para el menú de usuario */
+.info-usuario {
+  position: relative;
+}
+
+.usuario-boton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.usuario-boton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.usuario-icono {
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.usuario-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.usuario-nombre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.usuario-rol {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: capitalize;
+  line-height: 1.2;
+}
+
+.usuario-flecha {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.8);
+  transition: transform 0.3s ease;
+}
+
+.usuario-boton:hover .usuario-flecha {
+  transform: rotate(180deg);
+}
+
+.usuario-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: #f8f9fa;
+}
+
+.menu-item.cerrar-sesion {
+  color: #dc3545;
+  border-top: 1px solid #e9ecef;
+}
+
+.menu-item.cerrar-sesion:hover {
+  background-color: #fff5f5;
+}
+
+.menu-item.perfil-item {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.menu-item.perfil-item:hover {
+  background-color: #e8f4fd;
+}
+
+.menu-separador {
+  height: 1px;
+  background: #e9ecef;
+  margin: 0.5rem 0;
+}
+
+/* Responsivo para menú de usuario */
+@media (max-width: 768px) {
+  .usuario-boton {
+    padding: 0.4rem 0.8rem;
+    gap: 0.5rem;
+  }
+  
+  .usuario-icono {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+  
+  .usuario-nombre {
+    font-size: 0.8rem;
+  }
+  
+  .usuario-rol {
+    font-size: 0.7rem;
+  }
+  
+  .usuario-menu {
+    min-width: 180px;
+  }
+}

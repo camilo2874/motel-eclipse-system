@@ -1,6 +1,7 @@
 // Configuración de Firebase para Motel Eclipse
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 // Tu configuración específica de Firebase
 const firebaseConfig = {
@@ -17,6 +18,9 @@ const app = initializeApp(firebaseConfig);
 
 // Inicializar Firestore (base de datos)
 export const db = getFirestore(app);
+
+// Inicializar Firebase Auth
+export const auth = getAuth(app);
 
 // Exportar la app por si la necesitamos
 export default app;

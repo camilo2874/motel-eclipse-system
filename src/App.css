@@ -114,3 +114,10 @@ html, body {
     padding: 1rem;
   }
 }
+
+/* Animación para el spinner de carga */
+@keyframes spin {
+  to { 
+    transform: rotate(360deg); 
+  }
+}
