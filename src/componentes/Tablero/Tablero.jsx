@@ -119,7 +119,7 @@ function Tablero() {
           </div>
         </div>
 
-        <div className="tarjeta-estadistica huespedes">
+        <div className="tarjeta-estadistica habitaciones-activas">
           <div className="icono-estadistica">🕒</div>
           <div className="contenido-estadistica">
             <h3>Habitaciones Activas</h3>

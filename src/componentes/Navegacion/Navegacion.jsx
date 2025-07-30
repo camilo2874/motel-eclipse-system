@@ -4,7 +4,7 @@ function Navegacion({ seccionActiva, cambiarSeccion }) {
   const elementosNavegacion = [
     { id: 'tablero', etiqueta: 'Tablero', icono: '📊' },
     { id: 'habitaciones', etiqueta: 'Habitaciones', icono: '🏠' },
-    { id: 'huespedes', etiqueta: 'Huéspedes', icono: '👥' },
+    { id: 'inventario', etiqueta: 'Inventario', icono: '�' },
     { id: 'reportes', etiqueta: 'Reportes', icono: '📋' }
   ]
 

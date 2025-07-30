@@ -4,7 +4,7 @@ function Navigation({ activeSection, setActiveSection }) {
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'rooms', label: 'Habitaciones', icon: '🏠' },
-    { id: 'guests', label: 'Huéspedes', icon: '👥' },
+    { id: 'guests', label: 'Inventario', icon: '�' },
     { id: 'reports', label: 'Reportes', icon: '📋' }
   ]
 

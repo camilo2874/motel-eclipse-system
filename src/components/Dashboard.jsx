@@ -78,7 +78,7 @@ function Dashboard() {
         <div className="stat-card guests">
           <div className="stat-icon">👥</div>
           <div className="stat-content">
-            <h3>Huéspedes Actuales</h3>
+            <h3>Productos Disponibles</h3>
             <div className="stat-number">{stats.currentGuests}</div>
           </div>
         </div>

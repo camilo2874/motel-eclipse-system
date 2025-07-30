@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react'
 import './GestionHabitaciones.css'
+import { obtenerHabitaciones, actualizarHabitacion, guardarVenta, obtenerProductos, actualizarProducto } from '../../firebase/database'
+import { db } from '../../firebase/config'
+import { onSnapshot, collection } from 'firebase/firestore'
 
 function GestionHabitaciones() {
-  // Configuración inicial de habitaciones del Motel Eclipse
+  // Estado dinámico de las habitaciones (ahora desde Firebase)
+  const [habitaciones, setHabitaciones] = useState([])
+  const [cargandoHabitaciones, setCargandoHabitaciones] = useState(true)
+  const [firebaseConectado, setFirebaseConectado] = useState(false)
+  
+  // Estado para productos del inventario
+  const [productosInventario, setProductosInventario] = useState([])
+  const [cargandoProductos, setCargandoProductos] = useState(true)
+
+  // Configuración inicial de habitaciones
   const habitacionesIniciales = [
     { numero: 1, tipo: 'Estándar', estado: 'disponible', horaIngreso: null, precio5Horas: 40000, ventas: [] },
     { numero: 2, tipo: 'Estándar', estado: 'disponible', horaIngreso: null, precio5Horas: 40000, ventas: [] },
@@ -17,19 +29,97 @@ function GestionHabitaciones() {
     { numero: 11, tipo: 'Suite', estado: 'disponible', horaIngreso: null, precio5Horas: 65000, ventas: [] },
   ]
 
-  // Estado dinámico de las habitaciones
-  const [habitaciones, setHabitaciones] = useState(() => {
+  // Cargar habitaciones desde Firebase
+  useEffect(() => {
+    const cargarHabitacionesFirebase = async () => {
+      try {
+        console.log('🔥 Cargando habitaciones desde Firebase...')
+        const habitacionesFirebase = await obtenerHabitaciones()
+        
+        if (habitacionesFirebase && habitacionesFirebase.length > 0) {
+          setHabitaciones(habitacionesFirebase.map(habitacion => ({
+            ...habitacion,
+            ventas: habitacion.ventas || []
+          })))
+          setFirebaseConectado(true)
+          console.log('✅ Habitaciones cargadas desde Firebase')
+        } else {
+          console.log('📱 Cargando desde localStorage como respaldo')
+          cargarDatosLocales()
+        }
+      } catch (error) {
+        console.error('❌ Error cargando desde Firebase:', error)
+        cargarDatosLocales()
+      } finally {
+        setCargandoHabitaciones(false)
+      }
+    }
+
+    cargarHabitacionesFirebase()
+  }, [])
+
+  // Cargar productos del inventario
+  useEffect(() => {
+    const cargarProductosInventario = async () => {
+      try {
+        console.log('📦 Cargando productos del inventario...')
+        const productos = await obtenerProductos()
+        if (productos && productos.length > 0) {
+          setProductosInventario(productos.filter(p => p.disponible !== false))
+          console.log('✅ Productos del inventario cargados:', productos.length)
+        } else {
+          // Empezar completamente vacío - sin productos predeterminados
+          console.log('📦 No hay productos en el inventario')
+          setProductosInventario([])
+        }
+      } catch (error) {
+        console.error('❌ Error cargando productos:', error)
+        // Empezar vacío en caso de error
+        setProductosInventario([])
+      } finally {
+        setCargandoProductos(false)
+      }
+    }
+
+    cargarProductosInventario()
+  }, [])
+
+  // Escuchar cambios en tiempo real desde Firebase
+  useEffect(() => {
+    if (!firebaseConectado) return
+    
+    console.log('📡 Configurando escucha en tiempo real de Firebase')
+    const unsubscribe = onSnapshot(collection(db, 'habitaciones'), (snapshot) => {
+      const habitacionesActualizadas = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      
+      if (habitacionesActualizadas.length > 0) {
+        setHabitaciones(habitacionesActualizadas)
+        console.log('🔄 Habitaciones actualizadas desde Firebase en tiempo real')
+      }
+    })
+    
+    return () => unsubscribe()
+  }, [firebaseConectado])
+
+  // Función de respaldo para cargar datos locales
+  const cargarDatosLocales = () => {
     const habitacionesGuardadas = localStorage.getItem('habitaciones-motel-eclipse')
     if (habitacionesGuardadas) {
       const habitacionesParsed = JSON.parse(habitacionesGuardadas)
-      // Asegurar que todas las habitaciones tengan el array de ventas
-      return habitacionesParsed.map(habitacion => ({
+      const habitacionesConVentas = habitacionesParsed.map(habitacion => ({
         ...habitacion,
         ventas: habitacion.ventas || []
       }))
+      setHabitaciones(habitacionesConVentas)
+      console.log('📱 Habitaciones cargadas desde localStorage')
+    } else {
+      setHabitaciones(habitacionesIniciales)
+      console.log('🏗️ Usando configuración inicial de habitaciones')
     }
-    return habitacionesIniciales
-  })
+  }
 
   // Estado para el modal de ventas
   const [modalVentaAbierto, setModalVentaAbierto] = useState(false)
@@ -44,63 +134,59 @@ function GestionHabitaciones() {
   const [modalSalidaAbierto, setModalSalidaAbierto] = useState(false)
   const [habitacionSalida, setHabitacionSalida] = useState(null)
 
-  // Productos disponibles para venta
-  const productosDisponibles = [
-    { nombre: 'Bebida Gaseosa', precio: 3000 },
-    { nombre: 'Agua', precio: 2000 },
-    { nombre: 'Cerveza', precio: 5000 },
-    { nombre: 'Snacks', precio: 4000 },
-    { nombre: 'Preservativos', precio: 3500 },
-    { nombre: 'Toallas Extra', precio: 8000 },
-    { nombre: 'Champú', precio: 6000 },
-    { nombre: 'Otros', precio: 0 }
-  ]
-
-  // Guardar en localStorage cuando cambien las habitaciones
-  useEffect(() => {
-    localStorage.setItem('habitaciones-motel-eclipse', JSON.stringify(habitaciones))
-  }, [habitaciones])
-
-  // Recalcular total cuando cambie cantidad o precio
-  useEffect(() => {
-    if (nuevaVenta.precio > 0 && nuevaVenta.cantidad > 0) {
-      // Forzar re-render del componente para mostrar el nuevo total
-      setNuevaVenta(prev => ({ ...prev }))
-    }
-  }, [nuevaVenta.cantidad, nuevaVenta.precio])
-
-  // Funciones para manejar cambios de estado
-  const hacerCheckIn = (numeroHabitacion) => {
-    const ahora = new Date()
-    const horaActual = `${ahora.getHours()}:${ahora.getMinutes().toString().padStart(2, '0')}`
-    
-    setHabitaciones(prevHabitaciones =>
-      prevHabitaciones.map(habitacion =>
-        habitacion.numero === numeroHabitacion
-          ? { ...habitacion, estado: 'ocupada', horaIngreso: horaActual, ventas: habitacion.ventas || [] }
-          : habitacion
+  // Función para guardar cambios en Firebase
+  const guardarCambiosHabitacion = async (habitacion) => {
+    try {
+      if (firebaseConectado) {
+        // Usar el formato correcto de ID para Firestore
+        const habitacionId = `habitacion-${habitacion.numero}`;
+        await actualizarHabitacion(habitacionId, habitacion)
+        console.log(`✅ Habitación ${habitacion.numero} actualizada en Firebase`)
+      }
+      
+      // También guardar en localStorage como respaldo
+      const habitacionesActuales = habitaciones.map(h => 
+        h.numero === habitacion.numero ? habitacion : h
       )
-    )
+      localStorage.setItem('habitaciones-motel-eclipse', JSON.stringify(habitacionesActuales))
+    } catch (error) {
+      console.error('❌ Error guardando habitación:', error)
+    }
   }
 
-  const hacerCheckOut = (numeroHabitacion) => {
+  // Función para hacer check-in
+  const hacerCheckIn = async (numeroHabitacion) => {
+    try {
+      const ahora = new Date()
+      const horaIngreso = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      
+      const habitacionActualizada = {
+        numero: numeroHabitacion,
+        estado: 'ocupada',
+        horaIngreso: horaIngreso,
+        ventas: []
+      }
+      
+      setHabitaciones(prevHabitaciones =>
+        prevHabitaciones.map(habitacion =>
+          habitacion.numero === numeroHabitacion
+            ? { ...habitacion, estado: 'ocupada', horaIngreso: horaIngreso }
+            : habitacion
+        )
+      )
+      
+      // Guardar en Firebase
+      await guardarCambiosHabitacion(habitacionActualizada)
+      
+    } catch (error) {
+      console.error('Error en check-in:', error)
+    }
+  }
+
+  const abrirModalSalida = (numeroHabitacion) => {
     const habitacion = habitaciones.find(h => h.numero === numeroHabitacion)
     setHabitacionSalida(habitacion)
     setModalSalidaAbierto(true)
-  }
-
-  const confirmarSalida = () => {
-    if (!habitacionSalida) return
-    
-    setHabitaciones(prevHabitaciones =>
-      prevHabitaciones.map(habitacion =>
-        habitacion.numero === habitacionSalida.numero
-          ? { ...habitacion, estado: 'limpieza', horaIngreso: null, ventas: [] }
-          : habitacion
-      )
-    )
-    
-    cerrarModalSalida()
   }
 
   const cerrarModalSalida = () => {
@@ -108,7 +194,64 @@ function GestionHabitaciones() {
     setHabitacionSalida(null)
   }
 
-  const marcarLimpiezaCompleta = (numeroHabitacion) => {
+  const confirmarSalida = async () => {
+    if (!habitacionSalida) return
+
+    try {
+      // Calcular el costo total
+      const costoHabitacion = calcularCostoHabitacion(habitacionSalida)
+      const costoConsumo = calcularTotalConsumo(habitacionSalida.ventas)
+      const costoTotal = costoHabitacion + costoConsumo
+
+      // Generar recibo
+      const ahora = new Date()
+      const recibo = {
+        habitacion: habitacionSalida.numero,
+        tipo: habitacionSalida.tipo,
+        horaIngreso: habitacionSalida.horaIngreso,
+        horaSalida: ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
+        fecha: ahora.toLocaleDateString('es-CO'),
+        costoHabitacion: costoHabitacion,
+        costoConsumo: costoConsumo,
+        costoTotal: costoTotal,
+        ventas: habitacionSalida.ventas || []
+      }
+
+      console.log('💰 Recibo generado:', recibo)
+
+      // Actualizar estado de la habitación
+      const habitacionLimpieza = {
+        numero: habitacionSalida.numero,
+        estado: 'limpieza',
+        horaIngreso: null,
+        ventas: []
+      }
+      
+      setHabitaciones(prevHabitaciones =>
+        prevHabitaciones.map(habitacion =>
+          habitacion.numero === habitacionSalida.numero
+            ? { ...habitacion, estado: 'limpieza', horaIngreso: null }
+            : habitacion
+        )
+      )
+      
+      // Guardar en Firebase
+      await guardarCambiosHabitacion(habitacionLimpieza)
+      
+      cerrarModalSalida()
+    } catch (error) {
+      console.error('Error en check-out:', error)
+    }
+  }
+
+  const marcarLimpiezaCompleta = async (numeroHabitacion) => {
+    const habitacionActualizada = {
+      numero: numeroHabitacion,
+      estado: 'disponible',
+      horaIngreso: null,
+      ventas: []
+    }
+    
     setHabitaciones(prevHabitaciones =>
       prevHabitaciones.map(habitacion =>
         habitacion.numero === numeroHabitacion
@@ -116,13 +259,9 @@ function GestionHabitaciones() {
           : habitacion
       )
     )
-  }
-
-  const reiniciarHabitaciones = () => {
-    if (confirm('¿Estás seguro de que quieres reiniciar todas las habitaciones a disponible?')) {
-      setHabitaciones(habitacionesIniciales)
-      localStorage.removeItem('habitaciones-motel-eclipse')
-    }
+    
+    // Guardar en Firebase
+    await guardarCambiosHabitacion(habitacionActualizada)
   }
 
   // Funciones para manejar ventas
@@ -138,26 +277,39 @@ function GestionHabitaciones() {
     setNuevaVenta({ producto: '', cantidad: 1, precio: 0 })
   }
 
-  const manejarCambioProducto = (e) => {
-    const productoSeleccionado = e.target.value
-    const producto = productosDisponibles.find(p => p.nombre === productoSeleccionado)
-    
-    setNuevaVenta(prev => ({
-      ...prev,
-      producto: productoSeleccionado,
-      precio: producto ? producto.precio : 0
-    }))
+  const manejarCambioProducto = (nombreProducto) => {
+    const producto = productosInventario.find(p => p.nombre === nombreProducto)
+    if (producto) {
+      setNuevaVenta(prev => ({
+        ...prev,
+        producto: nombreProducto,
+        // Solo actualizar el precio si está en 0, permitir edición manual
+        precio: prev.precio === 0 ? producto.precio : prev.precio
+      }))
+    }
   }
 
-  const agregarVenta = () => {
+  const agregarVenta = async () => {
     if (!nuevaVenta.producto || nuevaVenta.cantidad <= 0) {
       alert('Por favor completa todos los campos')
       return
     }
 
+    // Verificar disponibilidad en stock
+    const producto = productosInventario.find(p => p.nombre === nuevaVenta.producto)
+    if (!producto) {
+      alert('Producto no encontrado en el inventario')
+      return
+    }
+
+    if (producto.stock < nuevaVenta.cantidad) {
+      alert(`Stock insuficiente. Solo quedan ${producto.stock} unidades de ${producto.nombre}`)
+      return
+    }
+
     const totalVenta = nuevaVenta.precio * nuevaVenta.cantidad
     const ventaCompleta = {
-      id: Date.now(), // ID único para la venta
+      id: Date.now(),
       producto: nuevaVenta.producto,
       cantidad: nuevaVenta.cantidad,
       precioUnitario: nuevaVenta.precio,
@@ -165,16 +317,44 @@ function GestionHabitaciones() {
       hora: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
     }
 
-    // Agregar la venta al array de ventas de la habitación
-    setHabitaciones(prevHabitaciones =>
-      prevHabitaciones.map(habitacion =>
-        habitacion.numero === habitacionSeleccionada
-          ? { ...habitacion, ventas: [...(habitacion.ventas || []), ventaCompleta] }
-          : habitacion
+    try {
+      // Actualizar stock del producto en el inventario
+      const nuevoStock = producto.stock - nuevaVenta.cantidad
+      await actualizarProducto(producto.id, { ...producto, stock: nuevoStock })
+      
+      // Actualizar la lista local de productos
+      setProductosInventario(productos => 
+        productos.map(p => 
+          p.id === producto.id 
+            ? { ...p, stock: nuevoStock }
+            : p
+        )
       )
-    )
-    
-    cerrarModalVenta()
+
+      // Agregar venta a la habitación
+      let habitacionActualizada;
+      setHabitaciones(prevHabitaciones =>
+        prevHabitaciones.map(habitacion => {
+          if (habitacion.numero === habitacionSeleccionada) {
+            habitacionActualizada = { ...habitacion, ventas: [...(habitacion.ventas || []), ventaCompleta] }
+            return habitacionActualizada
+          }
+          return habitacion
+        })
+      )
+      
+      // Guardar en Firebase
+      if (habitacionActualizada) {
+        await guardarCambiosHabitacion(habitacionActualizada)
+      }
+      
+      console.log(`✅ Venta agregada: ${nuevaVenta.cantidad}x ${nuevaVenta.producto}. Stock restante: ${nuevoStock}`)
+      cerrarModalVenta()
+      
+    } catch (error) {
+      console.error('❌ Error procesando venta:', error)
+      alert('Error al procesar la venta')
+    }
   }
 
   // Función para calcular el total de consumo de una habitación
@@ -187,64 +367,46 @@ function GestionHabitaciones() {
   const calcularCostoHabitacion = (habitacion, horaSalida = new Date()) => {
     if (!habitacion.horaIngreso) return habitacion.precio5Horas
 
-    // Calcular tiempo transcurrido en horas
     const [horas, minutos] = habitacion.horaIngreso.split(':')
     const ingreso = new Date()
     ingreso.setHours(parseInt(horas), parseInt(minutos), 0, 0)
     
-    const diferencia = horaSalida - ingreso
-    const horasTranscurridas = diferencia / (1000 * 60 * 60) // Convertir a horas decimales
+    const tiempoTranscurrido = horaSalida - ingreso
+    const horasTranscurridas = tiempoTranscurrido / (1000 * 60 * 60)
     
-    // Si es 5 horas o menos, cobrar precio base
     if (horasTranscurridas <= 5) {
       return habitacion.precio5Horas
     }
     
-    // Calcular horas adicionales
-    const horasAdicionales = Math.ceil(horasTranscurridas - 5) // Redondear hacia arriba
-    
-    // Determinar precio por hora adicional según tipo de habitación
-    let precioPorHoraAdicional
-    if (habitacion.tipo === 'Suite') {
-      precioPorHoraAdicional = 10000
-    } else {
-      precioPorHoraAdicional = 5000 // Estándar y Con Máquina del Amor
-    }
-    
+    const horasAdicionales = Math.ceil(horasTranscurridas - 5)
+    const precioPorHoraAdicional = habitacion.tipo === 'Suite' ? 10000 : 5000
     const costoAdicional = horasAdicionales * precioPorHoraAdicional
     
     return habitacion.precio5Horas + costoAdicional
   }
 
-  // Función para obtener detalles del cálculo de tiempo y costo
-  const obtenerDetallesTiempo = (habitacion, horaSalida = new Date()) => {
+  const obtenerInfoFacturacion = (habitacion) => {
     if (!habitacion.horaIngreso) return null
-
+    
     const [horas, minutos] = habitacion.horaIngreso.split(':')
     const ingreso = new Date()
     ingreso.setHours(parseInt(horas), parseInt(minutos), 0, 0)
     
-    const diferencia = horaSalida - ingreso
-    const horasTranscurridas = diferencia / (1000 * 60 * 60)
+    const ahora = new Date()
+    const tiempoTranscurrido = ahora - ingreso
+    const horasTranscurridas = tiempoTranscurrido / (1000 * 60 * 60)
     
-    const horasEnteras = Math.floor(horasTranscurridas)
-    const minutosRestantes = Math.floor((horasTranscurridas - horasEnteras) * 60)
-    
-    let horasAdicionales = 0
-    let costoAdicional = 0
-    
-    if (horasTranscurridas > 5) {
-      horasAdicionales = Math.ceil(horasTranscurridas - 5)
-      const precioPorHoraAdicional = habitacion.tipo === 'Suite' ? 10000 : 5000
-      costoAdicional = horasAdicionales * precioPorHoraAdicional
-    }
+    const costoBase = habitacion.precio5Horas
+    const horasAdicionales = Math.max(0, Math.ceil(horasTranscurridas - 5))
+    const precioPorHoraAdicional = habitacion.tipo === 'Suite' ? 10000 : 5000
+    const costoAdicional = horasAdicionales * precioPorHoraAdicional
     
     return {
-      horasEnteras,
-      minutosRestantes,
-      horasTranscurridas,
+      horasTranscurridas: horasTranscurridas.toFixed(1),
+      costoBase,
       horasAdicionales,
       costoAdicional,
+      costoTotal: costoBase + costoAdicional,
       precioPorHoraAdicional: habitacion.tipo === 'Suite' ? 10000 : 5000
     }
   }
@@ -282,56 +444,60 @@ function GestionHabitaciones() {
     return configuracionEstado[estado] || configuracionEstado.disponible
   }
 
+  if (cargandoHabitaciones || cargandoProductos) {
+    return (
+      <div className="gestion-habitaciones">
+        <div className="cargando">
+          <h2>🔥 Cargando datos...</h2>
+          <p>Conectando con Firebase...</p>
+          {cargandoHabitaciones && <p>📊 Cargando habitaciones...</p>}
+          {cargandoProductos && <p>📦 Cargando inventario...</p>}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="gestion-habitaciones">
       <div className="encabezado-habitaciones">
-        <h2>Gestión de Habitaciones</h2>
-        <div className="botones-encabezado">
-          <button className="boton-reiniciar" onClick={reiniciarHabitaciones}>
-            <span>🔄</span>
-            Reiniciar Todo
-          </button>
-          <button className="boton-agregar-habitacion">
-            <span>➕</span>
-            Agregar Habitación
-          </button>
-        </div>
+        <h2>
+          Gestión de Habitaciones
+          <span className={`estado-firebase ${firebaseConectado ? 'conectado' : 'desconectado'}`}>
+            {firebaseConectado ? '🟢 Firebase' : '🔴 Local'}
+          </span>
+        </h2>
       </div>
 
       <div className="cuadricula-habitaciones">
-        {habitaciones.map(habitacion => {
+        {habitaciones
+          .sort((a, b) => a.numero - b.numero) // Ordenar por número de habitación
+          .map(habitacion => {
           const estado = obtenerInsigniaEstado(habitacion.estado)
           return (
             <div 
               key={habitacion.numero} 
               className={`tarjeta-habitacion ${estado.clase}`}
-              data-tipo={habitacion.tipo}
             >
-              <div className="encabezado-tarjeta-habitacion">
-                <h3>Habitación {habitacion.numero}</h3>
-                <span className="estado-habitacion">
+              <div className="encabezado-tarjeta">
+                <h3>
+                  {obtenerIconoTipo(habitacion.tipo)} Habitación {habitacion.numero}
+                </h3>
+                <span className="insignia-estado">
                   {estado.icono} {estado.texto}
                 </span>
               </div>
-              
+
               <div className="detalles-habitacion">
-                <p><strong>Tipo:</strong> {obtenerIconoTipo(habitacion.tipo)} {habitacion.tipo}</p>
-                <p><strong>Precio 5 Horas:</strong> ${habitacion.precio5Horas.toLocaleString('es-CO')}</p>
+                <p><strong>Tipo:</strong> {habitacion.tipo}</p>
+                <p><strong>Precio 5h:</strong> ${habitacion.precio5Horas?.toLocaleString()}</p>
                 
-                {habitacion.estado === 'ocupada' && (
+                {habitacion.estado === 'ocupada' && habitacion.horaIngreso && (
                   <>
-                    <p><strong>Hora Ingreso:</strong> {habitacion.horaIngreso}</p>
-                    <p 
-                      className="campo-consumo-clickeable"
-                      onClick={() => abrirModalVenta(habitacion.numero)}
-                      title="Click para agregar venta"
-                    >
-                      <strong>Consumo:</strong> ${calcularTotalConsumo(habitacion.ventas || []).toLocaleString('es-CO')}
-                      {habitacion.ventas && Array.isArray(habitacion.ventas) && habitacion.ventas.length > 0 && (
-                        <span className="contador-ventas"> ({habitacion.ventas.length} items)</span>
-                      )}
-                    </p>
+                    <p><strong>Ingreso:</strong> {habitacion.horaIngreso}</p>
                     <p><strong>Tiempo:</strong> {calcularTiempoTranscurrido(habitacion.horaIngreso)}</p>
+                    {habitacion.ventas && habitacion.ventas.length > 0 && (
+                      <p><strong>Consumo:</strong> ${calcularTotalConsumo(habitacion.ventas).toLocaleString()}</p>
+                    )}
                   </>
                 )}
               </div>
@@ -339,34 +505,36 @@ function GestionHabitaciones() {
               <div className="acciones-habitacion">
                 {habitacion.estado === 'disponible' && (
                   <button 
-                    className="boton-accion primario"
+                    className="boton-checkin"
                     onClick={() => hacerCheckIn(habitacion.numero)}
                   >
-                    Ocupar
+                    Check-in
                   </button>
                 )}
+
                 {habitacion.estado === 'ocupada' && (
                   <>
                     <button 
-                      className="boton-accion secundario"
+                      className="boton-agregar-venta"
                       onClick={() => abrirModalVenta(habitacion.numero)}
                     >
-                      Venta
+                      + Venta
                     </button>
                     <button 
-                      className="boton-accion peligro"
-                      onClick={() => hacerCheckOut(habitacion.numero)}
+                      className="boton-checkout"
+                      onClick={() => abrirModalSalida(habitacion.numero)}
                     >
-                      Salida
+                      Check-out
                     </button>
                   </>
                 )}
+
                 {habitacion.estado === 'limpieza' && (
                   <button 
-                    className="boton-accion exito"
+                    className="boton-limpieza"
                     onClick={() => marcarLimpiezaCompleta(habitacion.numero)}
                   >
-                    Limpieza Lista
+                    ✅ Limpio
                   </button>
                 )}
               </div>
@@ -375,151 +543,85 @@ function GestionHabitaciones() {
         })}
       </div>
 
-      <div className="resumen-habitaciones">
-        <div className="tarjeta-resumen">
-          <h3>Resumen de Habitaciones</h3>
-          <div className="estadisticas-resumen">
-            <div className="elemento-resumen">
-              <span className="numero-resumen">{habitaciones.filter(h => h.estado === 'disponible').length}</span>
-              <span className="etiqueta-resumen">Disponibles</span>
-            </div>
-            <div className="elemento-resumen">
-              <span className="numero-resumen">{habitaciones.filter(h => h.estado === 'ocupada').length}</span>
-              <span className="etiqueta-resumen">Ocupadas</span>
-            </div>
-            <div className="elemento-resumen">
-              <span className="numero-resumen">{habitaciones.filter(h => h.estado === 'limpieza').length}</span>
-              <span className="etiqueta-resumen">En Limpieza</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="tarjeta-tipos">
-          <h3>Tipos de Habitaciones</h3>
-          <div className="tipos-info">
-            <div className="tipo-item">
-              <span className="tipo-icono">🏠</span>
-              <div className="tipo-detalles">
-                <h4>Estándar</h4>
-                <p>8 habitaciones - $40.000 (5 horas)</p>
-              </div>
-            </div>
-            <div className="tipo-item">
-              <span className="tipo-icono">💕</span>
-              <div className="tipo-detalles">
-                <h4>Con Máquina del Amor</h4>
-                <p>2 habitaciones (#5, #6) - $45.000 (5 horas)</p>
-              </div>
-            </div>
-            <div className="tipo-item">
-              <span className="tipo-icono">👑</span>
-              <div className="tipo-detalles">
-                <h4>Suite</h4>
-                <p>1 habitación (#11) - $65.000 (5 horas)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de Ventas */}
       {modalVentaAbierto && (
-        <div className="modal-overlay" onClick={cerrarModalVenta}>
-          <div className="modal-venta" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Agregar Venta - Habitación {habitacionSeleccionada}</h3>
-              <button className="boton-cerrar" onClick={cerrarModalVenta}>
-                ✕
-              </button>
-            </div>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Agregar Venta - Habitación {habitacionSeleccionada}</h3>
             
-            <div className="modal-body">
-              {/* Mostrar historial de ventas si existen */}
-              {(() => {
-                const habitacion = habitaciones.find(h => h.numero === habitacionSeleccionada)
-                const ventas = habitacion?.ventas || []
-                return ventas.length > 0 ? (
-                  <div className="historial-ventas">
-                    <h4>Ventas Realizadas:</h4>
-                    <div className="lista-ventas">
-                      {ventas.map(venta => (
-                        <div key={venta.id} className="item-venta">
-                          <span className="producto-venta">{venta.producto}</span>
-                          <span className="cantidad-venta">x{venta.cantidad}</span>
-                          <span className="total-venta">${venta.total.toLocaleString('es-CO')}</span>
-                          <span className="hora-venta">{venta.hora}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="total-consumo">
-                      <strong>Total Consumo: ${calcularTotalConsumo(ventas).toLocaleString('es-CO')}</strong>
-                    </div>
-                    <hr style={{margin: '1rem 0'}} />
-                  </div>
-                ) : null
-              })()}
+            <div className="form-group">
+              <label>Producto:</label>
+              <select 
+                value={nuevaVenta.producto} 
+                onChange={(e) => manejarCambioProducto(e.target.value)}
+              >
+                <option value="">Seleccionar producto</option>
+                {productosInventario
+                  .filter(producto => producto.stock > 0) // Solo mostrar productos con stock
+                  .map(producto => (
+                  <option key={producto.id} value={producto.nombre}>
+                    {producto.nombre} - ${producto.precio.toLocaleString()} (Stock: {producto.stock})
+                  </option>
+                ))}
+              </select>
+              {productosInventario.filter(p => p.stock === 0).length > 0 && (
+                <small style={{color: '#e74c3c', fontSize: '0.8rem'}}>
+                  ⚠️ Algunos productos sin stock no se muestran
+                </small>
+              )}
+            </div>
 
-              <h4>Agregar Nueva Venta:</h4>
-              
-              <div className="campo-venta">
-                <label>Producto:</label>
-                <select 
-                  value={nuevaVenta.producto} 
-                  onChange={manejarCambioProducto}
-                  className="select-producto"
-                >
-                  <option value="">Seleccionar producto...</option>
-                  {productosDisponibles.map(producto => (
-                    <option key={producto.nombre} value={producto.nombre}>
-                      {producto.nombre} - ${producto.precio.toLocaleString('es-CO')}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="form-group">
+              <label>Cantidad:</label>
+              <input 
+                type="number" 
+                min="1" 
+                value={nuevaVenta.cantidad}
+                onChange={(e) => setNuevaVenta(prev => ({
+                  ...prev, 
+                  cantidad: parseInt(e.target.value) || 1
+                }))}
+              />
+            </div>
 
-              <div className="campo-venta">
-                <label>Cantidad:</label>
+            <div className="form-group">
+              <label>Precio Unitario:</label>
+              <div className="input-group">
                 <input 
                   type="number" 
-                  min="1" 
-                  value={nuevaVenta.cantidad}
-                  onChange={(e) => {
-                    const cantidad = parseInt(e.target.value) || 1
-                    setNuevaVenta(prev => ({...prev, cantidad}))
-                  }}
-                  className="input-cantidad"
+                  value={nuevaVenta.precio}
+                  onChange={(e) => setNuevaVenta(prev => ({
+                    ...prev, 
+                    precio: parseFloat(e.target.value) || 0
+                  }))}
+                  placeholder="0"
                 />
-              </div>
-
-              {nuevaVenta.producto === 'Otros' && (
-                <div className="campo-venta">
-                  <label>Precio unitario:</label>
-                  <input 
-                    type="number" 
-                    min="0" 
-                    value={nuevaVenta.precio}
-                    onChange={(e) => {
-                      const precio = parseInt(e.target.value) || 0
-                      setNuevaVenta(prev => ({...prev, precio}))
+                {nuevaVenta.producto && (
+                  <button 
+                    type="button"
+                    className="btn-restore-price"
+                    onClick={() => {
+                      const producto = productosInventario.find(p => p.nombre === nuevaVenta.producto)
+                      if (producto) {
+                        setNuevaVenta(prev => ({...prev, precio: producto.precio}))
+                      }
                     }}
-                    className="input-precio"
-                    placeholder="Ingresa el precio"
-                  />
-                </div>
-              )}
-
-              {nuevaVenta.producto && nuevaVenta.cantidad > 0 && nuevaVenta.precio > 0 && (
-                <div className="resumen-venta">
-                  <p><strong>Total: ${(nuevaVenta.precio * nuevaVenta.cantidad).toLocaleString('es-CO')}</strong></p>
-                </div>
-              )}
+                    title="Restaurar precio original"
+                  >
+                    ↻
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="modal-footer">
-              <button className="boton-cancelar" onClick={cerrarModalVenta}>
+            <div className="total-venta">
+              <strong>Total: ${(nuevaVenta.precio * nuevaVenta.cantidad).toLocaleString()}</strong>
+            </div>
+
+            <div className="modal-buttons">
+              <button className="modal-button btn-cancelar" onClick={cerrarModalVenta}>
                 Cancelar
               </button>
-              <button className="boton-agregar-venta" onClick={agregarVenta}>
+              <button className="modal-button btn-confirmar" onClick={agregarVenta}>
                 Agregar Venta
               </button>
             </div>
@@ -527,101 +629,75 @@ function GestionHabitaciones() {
         </div>
       )}
 
-      {/* Modal de confirmación de salida */}
       {modalSalidaAbierto && habitacionSalida && (
-        <div className="modal-overlay" onClick={cerrarModalSalida}>
-          <div className="modal-salida" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Confirmar Salida</h3>
-              <button className="btn-cerrar-modal" onClick={cerrarModalSalida}>×</button>
-            </div>
+        <div className="modal-overlay">
+          <div className="modal-content modal-salida">
+            <h3>Check-out - Habitación {habitacionSalida.numero}</h3>
             
-            <div className="modal-body">
-              <div className="confirmacion-salida">
-                <h4>Habitación {habitacionSalida.numero}</h4>
-                <div className="detalle-pago">
-                  <div className="item-pago">
-                    <span>Tipo de habitación:</span>
-                    <span>{habitacionSalida.tipo}</span>
-                  </div>
-                  <div className="item-pago">
-                    <span>Hora de ingreso:</span>
-                    <span>{habitacionSalida.horaIngreso}</span>
-                  </div>
-                  <div className="item-pago">
-                    <span>Hora de salida:</span>
-                    <span>{new Date().toLocaleTimeString()}</span>
-                  </div>
-                  
-                  {(() => {
-                    const detalles = obtenerDetallesTiempo(habitacionSalida)
-                    if (!detalles) return null
-                    
-                    return (
-                      <>
-                        <div className="item-pago">
-                          <span>Tiempo total:</span>
-                          <span>{detalles.horasEnteras}h {detalles.minutosRestantes}m</span>
-                        </div>
-                        
-                        <div className="tiempo-detalle">
-                          <div className="item-pago">
-                            <span>Precio base (5 horas):</span>
-                            <span>${habitacionSalida.precio5Horas.toLocaleString()}</span>
-                          </div>
-                          
-                          {detalles.horasAdicionales > 0 && (
-                            <>
-                              <div className="item-pago">
-                                <span>Horas adicionales:</span>
-                                <span>{detalles.horasAdicionales}h × ${detalles.precioPorHoraAdicional.toLocaleString()}</span>
-                              </div>
-                              <div className="item-pago">
-                                <span>Costo adicional:</span>
-                                <span>${detalles.costoAdicional.toLocaleString()}</span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    )
-                  })()}
-                  
-                  {habitacionSalida.ventas && habitacionSalida.ventas.length > 0 && (
-                    <div className="consumos-detalle">
-                      <h5>Consumos:</h5>
-                      {habitacionSalida.ventas.map((venta, index) => (
-                        <div key={index} className="item-consumo">
-                          <span>{venta.producto} x{venta.cantidad}</span>
-                          <span>${(venta.precioUnitario * venta.cantidad).toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <div className="total-pago">
-                    <div className="subtotal">
-                      <span>Costo habitación:</span>
-                      <span>${calcularCostoHabitacion(habitacionSalida).toLocaleString()}</span>
-                    </div>
-                    <div className="subtotal">
-                      <span>Consumos:</span>
-                      <span>${(habitacionSalida.ventas || []).reduce((total, venta) => total + (venta.precioUnitario * venta.cantidad), 0).toLocaleString()}</span>
-                    </div>
-                    <div className="total-final">
-                      <span>Total a pagar:</span>
-                      <span>${(calcularCostoHabitacion(habitacionSalida) + (habitacionSalida.ventas || []).reduce((total, venta) => total + (venta.precioUnitario * venta.cantidad), 0)).toLocaleString()}</span>
-                    </div>
-                  </div>
+            <div className="resumen-salida">
+              <h4>Resumen de Estadía</h4>
+              <div className="detalle-salida">
+                <div className="detalle-item">
+                  <span>Tipo:</span>
+                  <span>{habitacionSalida.tipo}</span>
+                </div>
+                <div className="detalle-item">
+                  <span>Ingreso:</span>
+                  <span>{habitacionSalida.horaIngreso}</span>
+                </div>
+                <div className="detalle-item">
+                  <span>Salida:</span>
+                  <span>{new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="detalle-item">
+                  <span>Tiempo Total:</span>
+                  <span>{calcularTiempoTranscurrido(habitacionSalida.horaIngreso)}</span>
                 </div>
               </div>
             </div>
-            
-            <div className="modal-footer">
-              <button className="boton-cancelar" onClick={cerrarModalSalida}>
+
+            <div className="resumen-salida">
+              <h4>Detalle de Costos</h4>
+              <div className="detalle-salida">
+                <div className="detalle-item">
+                  <span>Habitación (5 horas):</span>
+                  <span>${habitacionSalida.precio5Horas?.toLocaleString()}</span>
+                </div>
+              
+              {(() => {
+                const info = obtenerInfoFacturacion(habitacionSalida)
+                if (info && info.horasAdicionales > 0) {
+                  return (
+                    <div className="detalle-item">
+                      <span>Horas adicionales ({info.horasAdicionales}):</span>
+                      <span>${info.costoAdicional.toLocaleString()}</span>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+              
+              {habitacionSalida.ventas && habitacionSalida.ventas.length > 0 && (
+                habitacionSalida.ventas.map(venta => (
+                  <div key={venta.id} className="detalle-item">
+                    <span>{venta.producto} x{venta.cantidad}:</span>
+                    <span>${venta.total.toLocaleString()}</span>
+                  </div>
+                ))
+              )}
+              
+              <div className="detalle-item">
+                <span><strong>TOTAL A PAGAR:</strong></span>
+                <span><strong>${(calcularCostoHabitacion(habitacionSalida) + calcularTotalConsumo(habitacionSalida.ventas)).toLocaleString()}</strong></span>
+              </div>
+              </div>
+            </div>
+
+            <div className="modal-buttons">
+              <button className="modal-button btn-cancelar" onClick={cerrarModalSalida}>
                 Cancelar
               </button>
-              <button className="boton-confirmar" onClick={confirmarSalida}>
+              <button className="modal-button btn-salida" onClick={confirmarSalida}>
                 Confirmar Salida
               </button>
             </div>

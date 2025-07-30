@@ -4,7 +4,7 @@ function MenuLateral({ seccionActiva, cambiarSeccion }) {
   const opcionesMenu = [
     { id: 'tablero', etiqueta: 'Panel', icono: '📊' },
     { id: 'habitaciones', etiqueta: 'Habitaciones', icono: '🏠' },
-    { id: 'huespedes', etiqueta: 'Huéspedes', icono: '👥' },
+    { id: 'inventario', etiqueta: 'Inventario', icono: '�' },
     { id: 'reportes', etiqueta: 'Reportes', icono: '📋' }
   ]
 
