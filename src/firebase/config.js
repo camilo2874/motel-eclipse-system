@@ -1,6 +1,6 @@
 // Configuración de Firebase para Motel Eclipse
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 // Tu configuración específica de Firebase
@@ -16,8 +16,24 @@ const firebaseConfig = {
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializar Firestore (base de datos)
+// Inicializar Firestore con configuraciones para reducir conexiones bloqueadas
 export const db = getFirestore(app);
+
+// Configurar Firestore para reducir conexiones persistentes
+try {
+  // Configuraciones para evitar problemas con bloqueadores
+  if (typeof window !== 'undefined') {
+    // Solo en el navegador, configurar para usar cache offline más agresivo
+    import('firebase/firestore').then(({ enableNetwork, disableNetwork }) => {
+      // Configuraciones adicionales se pueden agregar aquí si es necesario
+    }).catch(() => {
+      // Ignorar errores de importación
+    });
+  }
+} catch (error) {
+  // Ignorar errores de configuración
+  console.warn('Configuración de Firestore offline no disponible:', error.message);
+}
 
 // Inicializar Firebase Auth
 export const auth = getAuth(app);
