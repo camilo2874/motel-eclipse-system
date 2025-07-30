@@ -283,8 +283,13 @@ function GestionHabitaciones() {
       setNuevaVenta(prev => ({
         ...prev,
         producto: nombreProducto,
-        // Solo actualizar el precio si está en 0, permitir edición manual
-        precio: prev.precio === 0 ? producto.precio : prev.precio
+        precio: producto.precio // Siempre usar el precio del producto seleccionado
+      }))
+    } else {
+      setNuevaVenta(prev => ({
+        ...prev,
+        producto: nombreProducto,
+        precio: 0
       }))
     }
   }
@@ -508,7 +513,7 @@ function GestionHabitaciones() {
                     className="boton-checkin"
                     onClick={() => hacerCheckIn(habitacion.numero)}
                   >
-                    Check-in
+                    Ocupar
                   </button>
                 )}
 
@@ -524,7 +529,7 @@ function GestionHabitaciones() {
                       className="boton-checkout"
                       onClick={() => abrirModalSalida(habitacion.numero)}
                     >
-                      Check-out
+                      Salida
                     </button>
                   </>
                 )}
@@ -583,36 +588,6 @@ function GestionHabitaciones() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Precio Unitario:</label>
-              <div className="input-group">
-                <input 
-                  type="number" 
-                  value={nuevaVenta.precio}
-                  onChange={(e) => setNuevaVenta(prev => ({
-                    ...prev, 
-                    precio: parseFloat(e.target.value) || 0
-                  }))}
-                  placeholder="0"
-                />
-                {nuevaVenta.producto && (
-                  <button 
-                    type="button"
-                    className="btn-restore-price"
-                    onClick={() => {
-                      const producto = productosInventario.find(p => p.nombre === nuevaVenta.producto)
-                      if (producto) {
-                        setNuevaVenta(prev => ({...prev, precio: producto.precio}))
-                      }
-                    }}
-                    title="Restaurar precio original"
-                  >
-                    ↻
-                  </button>
-                )}
-              </div>
-            </div>
-
             <div className="total-venta">
               <strong>Total: ${(nuevaVenta.precio * nuevaVenta.cantidad).toLocaleString()}</strong>
             </div>
@@ -632,7 +607,7 @@ function GestionHabitaciones() {
       {modalSalidaAbierto && habitacionSalida && (
         <div className="modal-overlay">
           <div className="modal-content modal-salida">
-            <h3>Check-out - Habitación {habitacionSalida.numero}</h3>
+            <h3>Salida - Habitación {habitacionSalida.numero}</h3>
             
             <div className="resumen-salida">
               <h4>Resumen de Estadía</h4>

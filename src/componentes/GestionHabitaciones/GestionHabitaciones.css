@@ -479,62 +479,109 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
   background: white;
-  border-radius: 12px;
+  border-radius: 16px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-content h3 {
   margin: 0;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem 1rem;
   border-bottom: 1px solid #e9ecef;
-  background: #f8f9fa;
-  border-radius: 12px 12px 0 0;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-radius: 16px 16px 0 0;
   color: #2c3e50;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* ========== MODAL DE VENTAS ========== */
 
 .form-group {
   padding: 0 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
   color: #2c3e50;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .form-group select,
 .form-group input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 1rem;
   border: 2px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
-  transition: border-color 0.3s ease;
+  color: #000000;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
   box-sizing: border-box;
+  font-weight: 500;
 }
 
 .form-group select:focus,
 .form-group input:focus {
   outline: none;
   border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  background-color: #ffffff;
+}
+
+/* Estilos específicos para select */
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+.form-group select option {
+  color: #000000;
+  background-color: #ffffff;
+  padding: 0.5rem;
 }
 
 .input-group {
@@ -566,14 +613,17 @@
 }
 
 .total-venta {
-  background: #e8f5e8;
-  padding: 1rem;
-  margin: 1rem 1.5rem;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #e8f5e8, #d4edda);
+  padding: 1.5rem;
+  margin: 1.5rem 1.5rem;
+  border-radius: 12px;
   border-left: 4px solid #27ae60;
   text-align: center;
-  color: #196f3d;
-  font-size: 1.1rem;
+  color: #155724;
+  font-size: 1.3rem;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+  border: 1px solid #c3e6cb;
 }
 
 /* ========== BOTONES DE MODALES ========== */
@@ -581,41 +631,47 @@
 .modal-buttons {
   display: flex;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem;
   border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
-  border-radius: 0 0 12px 12px;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-radius: 0 0 16px 16px;
 }
 
 .modal-button {
   flex: 1;
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 1.5rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .btn-cancelar {
-  background: #6c757d;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
   color: white;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
 .btn-cancelar:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #5a6268, #495057);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
 .btn-confirmar {
   background: linear-gradient(135deg, #27ae60, #229954);
   color: white;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .btn-confirmar:hover {
   background: linear-gradient(135deg, #229954, #1e8449);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
 }
 
 .btn-salida {
