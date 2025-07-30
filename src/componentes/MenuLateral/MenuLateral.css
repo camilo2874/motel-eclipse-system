@@ -1,0 +1,147 @@
+.sidebar {
+  background: linear-gradient(180deg, #2c3e50, #34495e);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: relative;
+}
+
+.perfil-usuario {
+  padding: 2rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.avatar-usuario {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 2.5rem;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.info-usuario h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.rol-usuario {
+  display: inline-block;
+  background: #3498db;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.menu-navegacion {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.opcion-menu {
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.opcion-menu:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: #3498db;
+}
+
+.opcion-menu.activa {
+  background: rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  border-left-color: #3498db;
+  font-weight: 600;
+}
+
+.icono-menu {
+  font-size: 1.2rem;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.etiqueta-menu {
+  font-weight: 500;
+}
+
+.footer-sidebar {
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.footer-sidebar p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Indicador visual para la opción activa */
+.opcion-menu.activa::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: #3498db;
+  top: 0;
+}
+
+.opcion-menu {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  .sidebar.abierto {
+    left: 0;
+  }
+  
+  .perfil-usuario {
+    padding: 1.5rem 1rem;
+  }
+  
+  .avatar-usuario {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+}

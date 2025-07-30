@@ -1,0 +1,113 @@
+.header-principal {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  height: 80px;
+  box-sizing: border-box;
+}
+
+.titulo-sistema h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  letter-spacing: 1px;
+}
+
+.titulo-sistema p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 400;
+}
+
+.info-tiempo {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.fecha-hora {
+  text-align: right;
+}
+
+.fecha {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.hora {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: white;
+  font-family: 'Courier New', monospace;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.indicadores {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.indicador {
+  font-size: 1rem;
+  animation: pulso 2s infinite;
+}
+
+.indicador.online {
+  color: #2ecc71;
+}
+
+.texto-estado {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes pulso {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .header-principal {
+    padding: 1rem;
+    height: 60px;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .titulo-sistema h1 {
+    font-size: 1.4rem;
+  }
+  
+  .titulo-sistema p {
+    font-size: 0.8rem;
+  }
+  
+  .info-tiempo {
+    gap: 1rem;
+  }
+  
+  .fecha {
+    font-size: 0.8rem;
+  }
+  
+  .hora {
+    font-size: 1rem;
+  }
+}
